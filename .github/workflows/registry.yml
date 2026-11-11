@@ -1,0 +1,51 @@
+name: MCP Registry
+
+# Validates server.json on every pull request that touches it. Publishes it to the
+# official MCP Registry (as app.contactz/contactzapp) when a tag v<version> is pushed,
+# where <version> is server.json's "version". Pushing the tag is the decision to publish.
+#
+# Sign-in is DNS: the TXT record at contactz.app holds the public key, and the
+# MCP_PRIVATE_KEY secret holds the matching Ed25519 private key as hex.
+on:
+  pull_request:
+    paths: [server.json, .github/workflows/registry.yml]
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  MCP_PUBLISHER_VERSION: v1.8.7
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      - name: Check the tag is server.json's version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          want="v$(jq -r .version server.json)"
+          if [ "$GITHUB_REF_NAME" != "$want" ]; then
+            echo "Tag $GITHUB_REF_NAME, but server.json says $want. Bump the version in server.json and tag that."
+            exit 1
+          fi
+
+      - name: Sign in to the registry
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
+        run: ./mcp-publisher login dns --domain contactz.app --private-key "$MCP_PRIVATE_KEY"
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/')
+        run: ./mcp-publisher publish

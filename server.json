@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "app.contactz/contactzapp",
+  "title": "ContactZapp",
+  "description": "Keeps your contacts in sync across Google, Microsoft, Apple and CardDAV, and cleans up duplicates.",
+  "version": "1.0.6",
+  "websiteUrl": "https://contactz.app/developers",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://app.contactz.app/api/v1/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Your ContactZapp API key. Make one in Settings › Advanced. Start the value with Bearer.",
+          "value": "Bearer {api_key}",
+          "isRequired": true,
+          "isSecret": true,
+          "variables": {
+            "api_key": {
+              "description": "Your ContactZapp API key, for example cz_live_...",
+              "isRequired": true,
+              "isSecret": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/contactzapp-public/contactzapp-mcp",
+    "source": "github"
+  }
+}
