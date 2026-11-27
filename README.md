@@ -15,29 +15,74 @@ ContactZapp MCP server – sync Google, Microsoft, Apple and CardDAV contacts fr
 
 ## What you need
 
-- A [ContactZapp](https://contactz.app) account. The key works on every plan, Free included.
-- An API key. In ContactZapp, open Settings, then Advanced. Under API keys, choose Create key.
-  Tick what the key can do, and copy it when it appears. It is shown once.
+- A [ContactZapp](https://contactz.app) account (every plan, Free included).
 - An assistant that can connect to a remote MCP server.
+- An API key, only if your assistant can't sign in: in ContactZapp open
+  Settings, then Advanced, choose Create key, and copy it (shown once).
 
 ## Connect
 
-Send the key as `Authorization: Bearer cz_live_...`, with your key in place of `cz_live_...`.
+Prefer sign-in over keys: Claude, ChatGPT and Codex connect with OAuth,
+so there is nothing to copy — approve the ContactZapp consent screen
+and you're done. Anything else takes an API key, sent as
+`Authorization: Bearer cz_live_...` (your key in place of `cz_live_...`).
+To disconnect an assistant, go to Settings, then Advanced, then Connected apps.
 
-### OAuth sign-in
+### Claude
 
-Some assistants connect without an API key: they send you to ContactZapp,
-where a consent screen names the assistant and lists the scopes it wants.
-Approve it and the assistant acts with those scopes. Assistants may ask for
-`contacts:read`, `contacts:write` and `sync:trigger` only.
-To disconnect one, go to Settings, then Advanced, then Connected apps.
+**On the web or desktop (easiest).** Open Customize → Connectors, choose
+`+ Add` → Add custom connector, enter a name and
+`https://app.contactz.app/api/v1/mcp`, keep the sign-in Claude detected,
+then Add and Connect to approve it. It also shows up in Claude Code (`/mcp`).
+Free plan: one custom connector.
 
-### Claude Code
+**In Claude Code (terminal).**
 
 ```bash
-claude mcp add --transport http contactzapp https://app.contactz.app/api/v1/mcp \
-  --header "Authorization: Bearer cz_live_..."
+claude mcp add --transport http contactzapp https://app.contactz.app/api/v1/mcp
 ```
+
+Then open `/mcp` and choose Authenticate, or run `claude mcp login contactzapp`.
+Leave the `--header` flag off: adding one turns the OAuth sign-in off.
+Rather use a key? Add `--header "Authorization: Bearer cz_live_..."`
+to the same command.
+
+### OpenAI (ChatGPT and Codex)
+
+**ChatGPT on the web (easiest).** Go to Plugins, choose Add custom MCP server,
+enter `https://app.contactz.app/api/v1/mcp` as the Server URL, pick OAuth,
+accept the risk warning, and approve the sign-in on the ContactZapp screen.
+Install the plugin, then type `@` in a new chat to use it.
+Needs a paid plan; workspace policies may restrict custom servers.
+
+**Codex in the terminal.**
+
+```bash
+codex mcp add contactzapp --url https://app.contactz.app/api/v1/mcp
+```
+
+Then run `codex mcp login contactzapp` to sign in.
+Rather use a key? Add `--bearer-token-env-var CONTACTZAPP_API_KEY`
+to the command.
+
+### Google Antigravity (`mcp_config.json`)
+
+```json
+{
+  "mcpServers": {
+    "contactzapp": {
+      "serverUrl": "https://app.contactz.app/api/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer cz_live_..."
+      }
+    }
+  }
+}
+```
+
+Antigravity connects with your API key: paste it in place of `cz_live_...` above.
+Edit `~/.gemini/config/mcp_config.json` directly, or open it from the IDE
+via … > MCP Servers > Manage MCP Servers > View raw config.
 
 ### Cursor (`mcp.json`)
 
@@ -79,33 +124,6 @@ opencode mcp add contactzapp --url https://app.contactz.app/api/v1/mcp \
 
 Check it with `opencode mcp list`, with your key exported
 as `CONTACTZAPP_API_KEY`. Add `--global` to use it in every project.
-
-### Antigravity (`mcp_config.json`)
-
-```json
-{
-  "mcpServers": {
-    "contactzapp": {
-      "serverUrl": "https://app.contactz.app/api/v1/mcp",
-      "headers": {
-        "Authorization": "Bearer cz_live_..."
-      }
-    }
-  }
-}
-```
-
-Edit `~/.gemini/config/mcp_config.json` directly, or open it from the IDE
-via … > MCP Servers > Manage MCP Servers > View raw config.
-
-### ChatGPT
-
-ChatGPT uses OAuth sign-in (see above), not an API key.
-On the web, go to Plugins, choose Add custom MCP server, enter
-`https://app.contactz.app/api/v1/mcp` as the Server URL, pick OAuth,
-accept the risk warning, and approve the sign-in on the ContactZapp screen.
-Install the plugin, then type `@` in a new chat to use it.
-Needs a paid plan; workspace policies may restrict custom servers.
 
 **Another client?** If it takes an API key, give it the address
 and the `Authorization` header above.
