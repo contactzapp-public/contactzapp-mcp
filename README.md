@@ -1,42 +1,52 @@
-<p align="center">
-  <img src="logo.png" alt="ContactZapp" width="96" height="96">
-</p>
-
 # ContactZapp MCP server
 
-Let an AI assistant find, read, add and update your contacts in [ContactZapp](https://contactz.app).
+![ContactZapp logo](logo.png)
 
-ContactZapp keeps your contacts in sync across Google, Microsoft, Apple and CardDAV, and cleans up duplicates. This server gives an assistant the access your API key has.
+ContactZapp MCP server – sync Google, Microsoft, Apple and CardDAV contacts from Claude and other assistants.
 
-ContactZapp hosts the server. There is nothing to install or run. This repository holds the registry entry ([`server.json`](server.json)), the logo and the setup steps. It does not hold the server's code.
+[![MCP Registry app.contactz/contactzapp](https://img.shields.io/badge/MCP%20Registry-app.contactz%2Fcontactzapp-blue)](https://contactz.app/developers/mcp)
+![Streamable HTTP](https://img.shields.io/badge/transport-Streamable%20HTTP-green)
+[![License](https://img.shields.io/github/license/contactzapp-public/contactzapp-mcp)](https://github.com/contactzapp-public/contactzapp-mcp)
 
-| | |
-|---|---|
-| Address | `https://app.contactz.app/api/v1/mcp` |
-| Transport | Streamable HTTP |
-| Sign-in | Your ContactZapp API key, in the `Authorization` header |
-| Registry name | `app.contactz/contactzapp` |
+> **No install – hosted.** ContactZapp hosts the server at `https://app.contactz.app/api/v1/mcp`.
+> There is nothing to `npm install` or `docker run`.
+> This repo holds the registry entry (`server.json`), the logo, and these setup steps.
+> It does not hold server code. Registry name: `app.contactz/contactzapp`.
 
 ## What you need
 
-- A ContactZapp account. The API key works on every plan, Free included.
-- An API key. In ContactZapp, open Settings, then Advanced. Under API keys, choose Create key. Tick what the key can do, and copy it when it appears. It is shown once. [Getting started](https://contactz.app/developers/getting-started) walks through it.
+- A [ContactZapp](https://contactz.app) account. The key works on every plan, Free included.
+- An API key. In ContactZapp, open Settings, then Advanced. Under API keys, choose Create key.
+  Tick what the key can do, and copy it when it appears. It is shown once.
 - An assistant that can connect to a remote MCP server.
-
-You sign in with the key only. There is no Connect button or sign-in window for the assistant yet.
 
 ## Connect
 
-Send the key as `Authorization: Bearer cz_live_...`. Replace `cz_live_...` with your key.
+Send the key as `Authorization: Bearer cz_live_...`, with your key in place of `cz_live_...`.
 
-**Claude Code**
+### Claude Code
 
 ```bash
 claude mcp add --transport http contactzapp https://app.contactz.app/api/v1/mcp \
   --header "Authorization: Bearer cz_live_..."
 ```
 
-**Cline** (`cline_mcp_settings.json`)
+### Cursor (`mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "contactzapp": {
+      "url": "https://app.contactz.app/api/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer cz_live_..."
+      }
+    }
+  }
+}
+```
+
+### Cline (`cline_mcp_settings.json`)
 
 ```json
 {
@@ -52,13 +62,23 @@ claude mcp add --transport http contactzapp https://app.contactz.app/api/v1/mcp 
 }
 ```
 
-**Cursor** (`mcp.json`)
+### OpenCode
+
+```bash
+opencode mcp add contactzapp --url https://app.contactz.app/api/v1/mcp \
+  --header 'Authorization=Bearer {env:CONTACTZAPP_API_KEY}'
+```
+
+Check it with `opencode mcp list`, with your key exported
+as `CONTACTZAPP_API_KEY`. Add `--global` to use it in every project.
+
+### Antigravity (`mcp_config.json`)
 
 ```json
 {
   "mcpServers": {
     "contactzapp": {
-      "url": "https://app.contactz.app/api/v1/mcp",
+      "serverUrl": "https://app.contactz.app/api/v1/mcp",
       "headers": {
         "Authorization": "Bearer cz_live_..."
       }
@@ -67,15 +87,27 @@ claude mcp add --transport http contactzapp https://app.contactz.app/api/v1/mcp 
 }
 ```
 
-Other assistants ask for the same two things: the address and the header.
+Edit `~/.gemini/config/mcp_config.json` directly, or open it from the IDE
+via … > MCP Servers > Manage MCP Servers > View raw config.
 
-Open the address in a browser and you get an error. That is expected. An assistant sends its requests with POST.
+### ChatGPT
 
-Keep the key out of chats and tickets. If it leaks, revoke it in Settings, under Advanced, and make a new one.
+ChatGPT connects with OAuth sign-in, not an API key.
+On the web, go to Plugins, choose Add custom MCP server, enter
+`https://app.contactz.app/api/v1/mcp` as the Server URL, pick OAuth,
+accept the risk warning, and approve the sign-in on the ContactZapp screen.
+Install the plugin, then type `@` in a new chat to use it.
+Needs a paid plan; workspace policies may restrict custom servers.
+
+**Another client?** If it takes an API key, give it the address
+and the `Authorization` header above.
+
+Opening the URL in a browser returns an error. That is expected: the server needs POST.
 
 ## Tools
 
-Each tool calls the ContactZapp API with your key, so it has the permissions you gave the key. A key without the `contacts:write` scope cannot add a contact. No tool deletes a contact.
+Each tool calls the ContactZapp API with your key, so it has the scopes you gave the key.
+A key without `contacts:write` cannot add a contact. No tool deletes a contact.
 
 <!-- tools:start -->
 7 tools, as the server lists them. Generated by `scripts/sync-tools.mjs`.
@@ -91,18 +123,47 @@ Each tool calls the ContactZapp API with your key, so it has the permissions you
 | `event_list` | Event – List | Lists the events of one type, newest first. | `contacts:read` | Yes |
 <!-- tools:end -->
 
+## Try asking
+
+- "Find the contact with email `ada@example.com`." Triggers `contact_find`.
+- "Add Jane Miller, work email `jane@example.com`, mobile `+1 415-555-0132`."
+  Triggers `contact_create`.
+- "What changed yesterday? List recent contact events." Triggers `event_list`.
+- "Start a sync now." Triggers `sync_start`.
+
+## Scopes
+
+OAuth and API keys use the same scopes. Assistants may ask for these three only:
+
+- `contacts:read` — find and read contacts, and list events.
+- `contacts:write` — create and change contacts.
+- `sync:trigger` — start a sync.
+
+How to pick scopes is in [Authentication](https://contactz.app/developers/authentication).
+
 ## Limits
 
-You can make 60 requests a minute, all your keys together. Each tool call is one request. The limit is the same on every plan. [Rate limits](https://contactz.app/developers/rate-limits) says what happens at the limit.
+60 requests per minute, all your keys together. Each tool call is one request.
+The limit is the same on every plan.
+See [Rate limits](https://contactz.app/developers/rate-limits).
+At the limit the server answers `429`; wait out `Retry-After` and retry.
 
-## More
+## Security
 
+Never paste an API key into a chat, an issue, or a ticket.
+If a key leaks, revoke it in ContactZapp under Settings, then Advanced.
+Then make a new one.
+
+## Links
+
+- [ContactZapp](https://contactz.app)
 - [MCP server guide](https://contactz.app/developers/mcp)
+- [Getting started](https://contactz.app/developers/getting-started)
 - [API reference](https://contactz.app/developers/reference)
 - [Privacy](https://contactz.app/privacy)
 - Help: [support@contactz.app](mailto:support@contactz.app)
 
 ## Maintaining this repository
 
-- **The tool table** is generated from the live server: run `node scripts/sync-tools.mjs` and commit `README.md`. A daily check fails while the table differs from what the server lists. The section heading stays `## Tools`, which mcp.so reads to fill its listing.
-- **The registry entry** is [`server.json`](server.json), the only copy. Change it, raise its `version`, merge, then push the tag `v<version>`. The [MCP Registry workflow](.github/workflows/registry.yml) checks the tag against the file and publishes it. A pull request that changes the file is validated first.
+- Regenerate the tool table: `node scripts/sync-tools.mjs`, then commit.
+- Registry: `server.json` is the only copy. Bump `version`, tag `v<version>`.
