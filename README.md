@@ -24,6 +24,14 @@ ContactZapp MCP server – sync Google, Microsoft, Apple and CardDAV contacts fr
 
 Send the key as `Authorization: Bearer cz_live_...`, with your key in place of `cz_live_...`.
 
+### OAuth sign-in
+
+Some assistants connect without an API key: they send you to ContactZapp,
+where a consent screen names the assistant and lists the scopes it wants.
+Approve it and the assistant acts with those scopes. Assistants may ask for
+`contacts:read`, `contacts:write` and `sync:trigger` only.
+To disconnect one, go to Settings, then Advanced, then Connected apps.
+
 ### Claude Code
 
 ```bash
@@ -92,7 +100,7 @@ via … > MCP Servers > Manage MCP Servers > View raw config.
 
 ### ChatGPT
 
-ChatGPT connects with OAuth sign-in, not an API key.
+ChatGPT uses OAuth sign-in (see above), not an API key.
 On the web, go to Plugins, choose Add custom MCP server, enter
 `https://app.contactz.app/api/v1/mcp` as the Server URL, pick OAuth,
 accept the risk warning, and approve the sign-in on the ContactZapp screen.
