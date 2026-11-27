@@ -162,8 +162,3 @@ Then make a new one.
 - [API reference](https://contactz.app/developers/reference)
 - [Privacy](https://contactz.app/privacy)
 - Help: [support@contactz.app](mailto:support@contactz.app)
-
-## Maintaining this repository
-
-- Regenerate the tool table: `node scripts/sync-tools.mjs`, then commit.
-- Registry: `server.json` is the only copy. Bump `version`, tag `v<version>`.
